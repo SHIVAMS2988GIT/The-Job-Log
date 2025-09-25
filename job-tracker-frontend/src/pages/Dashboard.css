@@ -1,0 +1,142 @@
+/* Add these new styles to src/pages/Dashboard.css */
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.btn {
+    padding: 0.6rem 1.2rem;
+    background: var(--primary-500);
+    color: var(--white);
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.3s ease;
+}
+.btn:hover {
+    background: var(--primary-700);
+}
+
+.jobs-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+/* On larger screens, show two columns */
+@media (min-width: 992px) {
+    .jobs-container {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.job-card {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.company-logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    background: var(--primary-500);
+    color: var(--white);
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-right: 1rem;
+}
+
+.job-role {
+    display: block;
+    font-weight: 500;
+    color: var(--grey-800);
+}
+
+.job-company {
+    color: var(--grey-600);
+    font-size: 0.9rem;
+}
+
+.card-body {
+    flex-grow: 1; /* Pushes the footer to the bottom */
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+/* --- Status Badge Colors --- */
+.status-badge.applied {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+.status-badge.interview {
+    background: #d1fae5;
+    color: #065f46;
+}
+.status-badge.offer {
+    background: #cffafe;
+    color: #0891b2;
+}
+.status-badge.rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+}
+
+.date-info {
+    color: var(--grey-600);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.action-buttons .delete-btn {
+    background: transparent;
+    border: 1px solid var(--red-dark);
+    color: var(--red-dark);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.3s ease;
+}
+.action-buttons .delete-btn:hover {
+    background: var(--red-dark);
+    color: var(--white);
+}
