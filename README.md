@@ -2,7 +2,7 @@
 
 A full-stack web application built with the PERN stack (PostgreSQL, Express, React, Node.js) that allows users to track their job application process from "Applied" to "Offer".
 
-**Live Demo:** [Link to your deployed site] *(You can add this later if you deploy it!)*
+
 
 ---
 
