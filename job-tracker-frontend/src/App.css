@@ -1,5 +1,2 @@
-/*
-This is a multi-line CSS comment.
-It can span across several lines
-to provide detailed explanations.
-*/
+.app-shell{min-height:100vh;background:#f8fafc}.main-content{padding:0 24px 50px}
+@media(max-width:700px){.main-content{padding:0 16px 35px}}

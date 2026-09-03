@@ -1,53 +1,41 @@
-// src/pages/Login.js
 import { useState } from "react";
-import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import api from "../api";
+import { saveSession } from "../auth";
 import "./Form.css";
 
 export default function Login() {
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const submit = async (event) => {
+    event.preventDefault();
     setError("");
-    setSuccess("");
-
+    setLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/auth/login", formData);
-      localStorage.setItem("token", res.data.token);
-      setSuccess("✅ Login successful! Redirecting to dashboard...");
-
-      // ✨ UPDATED CODE: Force a page reload to correctly redirect
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 1500);
-
+      const { data } = await api.post("/auth/login", form);
+      saveSession(data.token, data.user);
+      toast.success("Welcome back!");
+      navigate(location.state?.from?.pathname || "/dashboard", { replace: true });
     } catch (err) {
-      console.error("Login error:", err.response?.data || err.message);
-      setError(err.response?.data?.error || "❌ Invalid credentials. Try again.");
-    }
+      setError(err.response?.data?.error || "Unable to login. Please try again.");
+    } finally { setLoading(false); }
   };
 
-  return (
-    <div className="form-container">
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <input type="email" name="email" placeholder="Enter Email" value={formData.email} onChange={handleChange} required />
-        <input type="password" name="password" placeholder="Enter Password" value={formData.password} onChange={handleChange} required />
-        <button type="submit">Login</button>
-      </form>
-
-      {error && <p className="error">{error}</p>}
-      {success && <p className="success">{success}</p>}
-
-      <p>New user? <Link to="/register">Register</Link></p>
-    </div>
-  );
+  return <div className="auth-page"><div className="auth-card">
+    <div className="auth-brand">💼 The Job Log</div>
+    <h1 className="auth-title">Welcome back</h1>
+    <p className="auth-subtitle">Track your applications and keep your job search organized.</p>
+    <form className="auth-form" onSubmit={submit}>
+      <div className="field"><label htmlFor="email">Email</label><input id="email" type="email" autoComplete="email" value={form.email} onChange={(e)=>setForm({...form,email:e.target.value})} required /></div>
+      <div className="field"><label htmlFor="password">Password</label><input id="password" type="password" autoComplete="current-password" value={form.password} onChange={(e)=>setForm({...form,password:e.target.value})} required /></div>
+      <button className="btn-primary" disabled={loading}>{loading ? "Signing in..." : "Sign in"}</button>
+    </form>
+    {error && <div className="error-message">{error}</div>}
+    <p className="auth-footer">Don't have an account? <Link to="/register">Create one</Link></p>
+  </div></div>;
 }

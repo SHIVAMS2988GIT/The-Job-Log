@@ -1,13 +1,5 @@
-// src/components/LoadingSpinner.js
-import React from 'react';
-import './LoadingSpinner.css';
+import "./LoadingSpinner.css";
 
-const LoadingSpinner = () => {
-  return (
-    <div className="spinner-container">
-      <div className="loading-spinner"></div>
-    </div>
-  );
-};
-
-export default LoadingSpinner;
+export default function LoadingSpinner({ label = "Loading..." }) {
+  return <div className="loading-state"><div className="loading-spinner" /><span>{label}</span></div>;
+}

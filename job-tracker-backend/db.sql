@@ -1,34 +1,31 @@
--- Drop old tables if exist
-DROP TABLE IF EXISTS jobs CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
+-- Fresh database schema for The Job Log v2.
+-- Run this on a NEW/EMPTY database.
 
--- Create users table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100),
-    email VARCHAR(100) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
     password TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create jobs table
-CREATE TABLE jobs (
+CREATE TABLE IF NOT EXISTS jobs (
     id SERIAL PRIMARY KEY,
-    user_id INT REFERENCES users(id) ON DELETE CASCADE,
-    company VARCHAR(100),
-    role VARCHAR(100),
-    status VARCHAR(50) DEFAULT 'applied',
-    date_applied DATE DEFAULT CURRENT_DATE,
-    notes TEXT
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    company VARCHAR(150) NOT NULL,
+    role VARCHAR(150) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'applied' CHECK (status IN ('applied','interview','offer','rejected')),
+    date_applied DATE NOT NULL DEFAULT CURRENT_DATE,
+    location VARCHAR(150) NOT NULL DEFAULT '',
+    job_url TEXT,
+    salary VARCHAR(100) NOT NULL DEFAULT '',
+    recruiter VARCHAR(150) NOT NULL DEFAULT '',
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert sample user
--- Password: password123 (bcrypt hashed for demonstration; replace with your own)
-INSERT INTO users (name, email, password)
-VALUES ('Shivam', 'shivam@example.com', '$2a$10$u5BfZSPC1CwTnMPbn.Y4hehTX/7ZTZM6zVvZpp5X7tQiFq6UYPu2K');
-
--- Insert sample jobs for the sample user
-INSERT INTO jobs (user_id, company, role, status, date_applied, notes)
-VALUES
-(1, 'ABC Corp', 'Software Engineer', 'applied', '2025-09-05', 'First application'),
-(1, 'XYZ Ltd', 'Backend Developer', 'interview', '2025-09-01', 'Interview scheduled next week');
+CREATE INDEX IF NOT EXISTS idx_jobs_user_id ON jobs(user_id);
+CREATE INDEX IF NOT EXISTS idx_jobs_user_status ON jobs(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_jobs_user_date ON jobs(user_id, date_applied DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users(LOWER(email));

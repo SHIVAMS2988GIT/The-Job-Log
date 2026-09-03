@@ -1,22 +1,33 @@
-// src/components/Navbar.js
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { FaBriefcase, FaPlus, FaSignOutAlt } from "react-icons/fa";
+import { clearSession, getStoredUser } from "../auth";
+import "./Navbar.css";
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const user = getStoredUser();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
+  const logout = () => {
+    clearSession();
+    navigate("/login", { replace: true });
   };
 
   return (
-    <nav className="navbar">
-      <h2 className="logo">Job Tracker</h2>
-      <ul className="nav-links">
-        <li><Link to="/dashboard">Dashboard</Link></li>
-        <li><Link to="/add-job">Add Job</Link></li>
-        <li><button onClick={handleLogout} className="logout-btn">Logout</button></li>
-      </ul>
-    </nav>
+    <header className="navbar">
+      <div className="nav-inner">
+        <NavLink to="/dashboard" className="brand">
+          <span className="brand-icon"><FaBriefcase /></span>
+          <span>The Job Log</span>
+        </NavLink>
+        <nav className="nav-links">
+          <NavLink to="/dashboard" end className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>Dashboard</NavLink>
+          <NavLink to="/add-job" className="nav-add"><FaPlus /> Add Job</NavLink>
+          <div className="user-menu">
+            <span className="user-name">{user?.name || "Account"}</span>
+            <button className="logout-button" onClick={logout} title="Logout" aria-label="Logout"><FaSignOutAlt /></button>
+          </div>
+        </nav>
+      </div>
+    </header>
   );
 }

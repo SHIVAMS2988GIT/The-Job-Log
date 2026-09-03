@@ -2,83 +2,94 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const pool = require("../db");
+const authenticateToken = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-// SIGNUP
-router.post("/signup", async (req, res) => {
-  const { name, email, password } = req.body;
+const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
+const cleanName = (name) => String(name || "").trim();
 
+function validateRegistration({ name, email, password }) {
+  if (name.length < 2 || name.length > 100) return "Name must be between 2 and 100 characters.";
+  if (!/^\S+@\S+\.\S+$/.test(email)) return "Please enter a valid email address.";
+  if (password.length < 8 || password.length > 72) return "Password must be between 8 and 72 characters.";
+  return null;
+}
+
+router.post("/signup", async (req, res, next) => {
   try {
-    const existingUser = await pool.query(
-      "SELECT * FROM users WHERE email = $1",
-      [email]
+    const name = cleanName(req.body.name);
+    const email = normalizeEmail(req.body.email);
+    const password = String(req.body.password || "");
+    const validationError = validateRegistration({ name, email, password });
+
+    if (validationError) return res.status(400).json({ error: validationError });
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const result = await pool.query(
+      `INSERT INTO users (name, email, password)
+       VALUES ($1, $2, $3)
+       RETURNING id, name, email, created_at`,
+      [name, email, passwordHash]
     );
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: "User already exists" });
-    }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const newUser = await pool.query(
-      "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email",
-      [name, email, hashedPassword]
-    );
-
-    // ✨ IMPROVEMENT: Use 201 status for successful creation
-    res.status(201).json({
-      message: "User created successfully",
-      user: newUser.rows[0],
+    return res.status(201).json({
+      message: "Account created successfully.",
+      user: result.rows[0],
     });
-  } catch (err) {
-    console.error("Signup error:", err);
-    // ✨ IMPROVEMENT: Send error back as JSON for consistency
-    res.status(500).json({ error: "Server error during signup" });
+  } catch (error) {
+    if (error.code === "23505") {
+      return res.status(409).json({ error: "An account with this email already exists." });
+    }
+    return next(error);
   }
 });
 
-
-// LOGIN
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password are required" });
-  }
-
+router.post("/login", async (req, res, next) => {
   try {
-    const user = await pool.query(
-      "SELECT * FROM users WHERE email = $1",
+    const email = normalizeEmail(req.body.email);
+    const password = String(req.body.password || "");
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required." });
+    }
+
+    const result = await pool.query(
+      "SELECT id, name, email, password FROM users WHERE email = $1 LIMIT 1",
       [email]
     );
-    if (user.rows.length === 0) {
-      return res.status(400).json({ error: "Invalid credentials" });
+
+    const user = result.rows[0];
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ error: "Invalid email or password." });
     }
 
-    const validPassword = await bcrypt.compare(
-      password,
-      user.rows[0].password
+    const token = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
     );
-    if (!validPassword) {
-      return res.status(400).json({ error: "Invalid credentials" });
-    }
 
-   const token = jwt.sign(
-  { 
-    userId: user.rows[0].id, 
-    name: user.rows[0].name, 
-    email: user.rows[0].email // ✨ Add the email here
-  },
-  process.env.JWT_SECRET,
-  { expiresIn: "1h" }
-);
+    return res.json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email },
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
 
-    res.json({ token });
-  } catch (err) {
-    console.error("Login error:", err);
-    // ✨ IMPROVEMENT: Send error back as JSON for consistency
-    res.status(500).json({ error: "Server error during login" });
+router.get("/me", authenticateToken, async (req, res, next) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, name, email, created_at FROM users WHERE id = $1 LIMIT 1",
+      [req.user.userId]
+    );
+
+    if (!result.rows[0]) return res.status(404).json({ error: "User not found." });
+    return res.json({ user: result.rows[0] });
+  } catch (error) {
+    return next(error);
   }
 });
 
